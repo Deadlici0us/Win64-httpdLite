@@ -39,7 +39,7 @@ public cachedPngHeaderLen
 
 .data
     ; Null-terminated strings for console logging
-    msgStart        db "Starting Echo Server on port 80 (IOCP)...", 13, 10, 0
+    msgStart        db "Starting Echo Server on port 8080 (IOCP)...", 13, 10, 0
     msgSocketErr    db "Socket creation failed.", 13, 10, 0
     msgBindErr      db "Bind failed.", 13, 10, 0
     msgListenErr    db "Listen failed.", 13, 10, 0

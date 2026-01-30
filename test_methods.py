@@ -5,7 +5,7 @@ import time
 import os
 
 HOST = '127.0.0.1'
-PORT = 80
+PORT = 8080
 METHODS = ['GET', 'POST', 'HEAD', 'PUT', 'PATCH', 'DELETE']
 HTML_PATH = os.path.join(os.path.dirname(__file__), 'html', 'index.html')
 

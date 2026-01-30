@@ -4,7 +4,7 @@ import time
 import os
 
 HOST = '127.0.0.1'
-PORT = 80
+PORT = 8080
 HTML_PATH = os.path.join(os.path.dirname(__file__), 'html', 'index.html')
 
 def test_server():

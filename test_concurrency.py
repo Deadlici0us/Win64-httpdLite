@@ -5,7 +5,7 @@ import sys
 import os
 
 HOST = '127.0.0.1'
-PORT = 80
+PORT = 8080
 CLIENT_COUNT = 50
 HTTP_REQUEST = b"GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
 HTML_PATH = os.path.join(os.path.dirname(__file__), 'html', 'index.html')

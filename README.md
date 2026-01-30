@@ -88,7 +88,7 @@ The project uses CMake to configure the Microsoft Macro Assembler (`ml64.exe`).
 ```
 
 ### Usage
-Start the server and access it at `http://localhost`.
+Start the server and access it at `http://localhost:8080`.
 
 ```powershell
 .\run_server.bat

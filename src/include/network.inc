@@ -15,7 +15,7 @@ SO_REUSEADDR      equ 4
 
 ; Configuration
 BUFFER_SIZE       equ 1024
-DEFAULT_PORT      equ 80
+DEFAULT_PORT      equ 8080
 
 ; Socket Error Codes
 INVALID_SOCKET    equ 0FFFFFFFFFFFFFFFFh ; Explicit 64-bit -1
