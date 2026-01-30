@@ -79,20 +79,25 @@ You can skip the build process by downloading the latest release **ZIP file** fr
 *   **Visual Studio Build Tools** (C++ and MASM support required)
 *   **Python 3.x** (Optional, for running tests)
 
-### Build Instructions
-The project uses CMake to configure the Microsoft Macro Assembler (`ml64.exe`).
+### Releases
+- Download: You can skip the build process entirely by downloading the latest pre-compiled ZIP from the Releases section. This package includes the executable, the `html` assets, and the full test suite.
 
-```powershell
-# Generate build files and compile
+### 1. Build
+Use the helper script:
+```cmd
 .\build.bat
 ```
+*Alternatively, standard CMake commands work:*
+```cmd
+mkdir build
+cd build
+cmake -G "Ninja" ..
+cmake --build .
+```
+- Once built (or downloaded from the releases page), you can start the server using the provided batch file or by running the executable directly.
 
 ### Usage
 Start the server and access it at `http://localhost:8080`.
-
-```powershell
-.\run_server.bat
-```
 
 ### Testing
 The repository includes a Python test suite to verify functionality and stability under load.

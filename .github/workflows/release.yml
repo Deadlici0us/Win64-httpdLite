@@ -67,11 +67,11 @@ jobs:
         # 1. Create a clean staging folder
         New-Item -ItemType Directory -Path "release_pkg/build"
 
-        # 2. Copy the executable into the build directory
-        Copy-Item "build/httpdLite.exe" -Destination "release_pkg/build/"
+        # 2. Copy the executable
+        Copy-Item "build/httpdLite.exe" -Destination "release_pkg/"
 
-        # 3. Copy the html directory INSIDE the build directory (where the server expects it)
-        Copy-Item -Path "html" -Destination "release_pkg/build/" -Recurse
+        # 3. Copy the html directory
+        Copy-Item -Path "html" -Destination "release_pkg/" -Recurse
 
         # 4. Copy Test/Runner files to the root (so they are next to the build folder)
         $files = "test_html.py", "test_concurrency.py", "test_methods.py", "test_resources.py", "run_tests.bat", "CMakeLists.txt"
