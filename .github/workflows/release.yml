@@ -74,7 +74,7 @@ jobs:
         Copy-Item -Path "html" -Destination "release_pkg/" -Recurse
 
         # 4. Copy Test/Runner files to the root (so they are next to the build folder)
-        $files = "test_html.py", "test_concurrency.py", "test_methods.py", "test_resources.py", "run_tests.bat", "CMakeLists.txt"
+        $files = "test_html.py", "test_concurrency.py", "test_methods.py", "test_resources.py", "run_tests.bat"
         foreach ($file in $files) {
             if (Test-Path $file) { Copy-Item $file -Destination "release_pkg/" }
         }
