@@ -33,22 +33,6 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Debug - List Build Directory
-      shell: pwsh
-      run: |
-        Write-Host "--- Checking Root Contents ---"
-        ls
-        Write-Host "--- Checking Build Folder Contents ---"
-        if (Test-Path "build") {
-            ls build
-            if (Test-Path "build/html") {
-                Write-Host "SUCCESS: html folder exists in build/"
-                ls build/html
-            } else {
-                Write-Warning "FAILURE: html folder is MISSING from build/"
-            }
-        }
-
     - name: Run Concurrency Tests
       shell: pwsh
       run: |
@@ -57,9 +41,6 @@ jobs:
                   -WorkingDirectory "build" `
                   -PassThru `
                   -WindowStyle Hidden
-
-        Write-Host "Waiting for server to start..."
-        Start-Sleep -Seconds 3
 
         try {
             Write-Host "Running functional test..."
@@ -103,7 +84,7 @@ jobs:
 
         # 6. Compress everything
         # Note: We zip the CONTENTS of release_pkg so 'build' and 'html' are at the top level
-        Compress-Archive -Path "release_pkg/*" -DestinationPath "httpdLite_v${{ github.ref_name }}.zip"
+        Compress-Archive -Path "release_pkg/*" -DestinationPath "httpdLite_${{ github.ref_name }}.zip"
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
