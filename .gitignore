@@ -1,0 +1,7 @@
+build/
+.vscode/
+.ninja*
+*.exe
+*.ninja
+*.pdb
+.repomixignore
