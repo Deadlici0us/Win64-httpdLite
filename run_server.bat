@@ -1,6 +1,6 @@
 @echo off
-if exist build\httplite.exe (
-    build\httplite.exe
+if exist build\httpdlite.exe (
+    build\httpdlite.exe
 ) else (
     echo Error: httplite.exe not found. Please run build.bat first.
 )

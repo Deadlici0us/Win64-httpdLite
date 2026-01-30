@@ -61,23 +61,26 @@ jobs:
     - name: Package Release Files
       shell: pwsh
       run: |
-        # 1. Create a staging folder
-        New-Item -ItemType Directory -Path "release_pkg"
+        # 1. Create the main staging folder and the internal build folder
+        New-Item -ItemType Directory -Path "release_pkg/build"
 
-        # 2. Copy the executable and the html directory
-        Copy-Item "build/httpdLite.exe" -Destination "release_pkg/"
+        # 2. Copy the executable into the internal build directory
+        Copy-Item "build/httpdLite.exe" -Destination "release_pkg/build/"
+
+        # 3. Copy the html directory to the root of the package
         Copy-Item -Path "html" -Destination "release_pkg/" -Recurse
 
-        # 3. Copy Developer/Source files
-        # Using a list to ensure we get exactly what you asked for
-        Copy-Item "test_html.py", "test_concurrency.py", "test_methods.py", "test_resources.py" -Destination "release_pkg/"
-        Copy-Item "run_tests.bat" -Destination "release_pkg/"
-        Copy-Item "CMakeLists.txt" -Destination "release_pkg/"
+        # 4. Copy Developer/Source files to the root of the package
+        $files = "test_html.py", "test_concurrency.py", "test_methods.py", "test_resources.py", "run_tests.bat", "CMakeLists.txt"
+        foreach ($file in $files) {
+            if (Test-Path $file) { Copy-Item $file -Destination "release_pkg/" }
+        }
 
-        # 4. Optional: Copy the source folder if your CMakeLists needs it to build
+        # 5. Copy src folder if it exists
         if (Test-Path "src") { Copy-Item -Path "src" -Destination "release_pkg/" -Recurse }
 
-        # 5. Compress everything
+        # 6. Compress everything
+        # Note: We zip the CONTENTS of release_pkg so 'build' and 'html' are at the top level
         Compress-Archive -Path "release_pkg/*" -DestinationPath "httpdLite_v${{ github.ref_name }}.zip"
 
     - name: Create GitHub Release
