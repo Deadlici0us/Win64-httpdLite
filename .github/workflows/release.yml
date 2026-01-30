@@ -64,26 +64,22 @@ jobs:
     - name: Package Release Files
       shell: pwsh
       run: |
-        # 1. Create the main staging folder and the internal build folder
+        # 1. Create a clean staging folder
         New-Item -ItemType Directory -Path "release_pkg/build"
 
-        # 2. Copy the executable into the internal build directory
+        # 2. Copy the executable into the build directory
         Copy-Item "build/httpdLite.exe" -Destination "release_pkg/build/"
 
-        # 3. Copy the html directory to the root of the package
-        Copy-Item -Path "html" -Destination "release_pkg/" -Recurse
+        # 3. Copy the html directory INSIDE the build directory (where the server expects it)
+        Copy-Item -Path "html" -Destination "release_pkg/build/" -Recurse
 
-        # 4. Copy Developer/Source files to the root of the package
+        # 4. Copy Test/Runner files to the root (so they are next to the build folder)
         $files = "test_html.py", "test_concurrency.py", "test_methods.py", "test_resources.py", "run_tests.bat", "CMakeLists.txt"
         foreach ($file in $files) {
             if (Test-Path $file) { Copy-Item $file -Destination "release_pkg/" }
         }
 
-        # 5. Copy src folder if it exists
-        if (Test-Path "src") { Copy-Item -Path "src" -Destination "release_pkg/" -Recurse }
-
-        # 6. Compress everything
-        # Note: We zip the CONTENTS of release_pkg so 'build' and 'html' are at the top level
+        # 6. Compress the contents of release_pkg
         Compress-Archive -Path "release_pkg/*" -DestinationPath "httpdLite_${{ github.ref_name }}.zip"
 
     - name: Create GitHub Release
