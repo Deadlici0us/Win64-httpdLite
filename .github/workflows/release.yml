@@ -39,6 +39,9 @@ jobs:
         # Start the server
         $server = Start-Process -FilePath "build/httpdLite.exe" -PassThru
 
+        Write-Host "Waiting for server to start..."
+        Start-Sleep -Seconds 2
+
         try {
             Write-Host "Running functional test..."
             python test_html.py
