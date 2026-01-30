@@ -33,6 +33,22 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Debug - List Build Directory
+      shell: pwsh
+      run: |
+        Write-Host "--- Checking Root Contents ---"
+        ls
+        Write-Host "--- Checking Build Folder Contents ---"
+        if (Test-Path "build") {
+            ls build
+            if (Test-Path "build/html") {
+                Write-Host "SUCCESS: html folder exists in build/"
+                ls build/html
+            } else {
+                Write-Warning "FAILURE: html folder is MISSING from build/"
+            }
+        }
+
     - name: Run Concurrency Tests
       shell: pwsh
       run: |
