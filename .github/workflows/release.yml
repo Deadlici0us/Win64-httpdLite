@@ -52,11 +52,14 @@ jobs:
     - name: Run Concurrency Tests
       shell: pwsh
       run: |
-        # Start the server
-        $server = Start-Process -FilePath "build/httpdLite.exe" -PassThru
+        # Start the server and FORCE it to run inside the build directory
+        $server = Start-Process -FilePath "httpdLite.exe" `
+                  -WorkingDirectory "build" `
+                  -PassThru `
+                  -WindowStyle Hidden
 
         Write-Host "Waiting for server to start..."
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 3
 
         try {
             Write-Host "Running functional test..."
