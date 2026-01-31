@@ -73,5 +73,5 @@ CachedFile STRUCT
     ContentLen  DWORD ?         ; Length of content
     Header      QWORD ?         ; Pointer to HTTP Header
     HeaderLen   DWORD ?         ; Length of Header
-    Padding     DWORD ?         ; Alignment
+    FileNameLen DWORD ?         ; Length of Filename
 CachedFile ENDS

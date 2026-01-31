@@ -190,7 +190,9 @@ LoadFileToCache proc private
     mov rcx, rax
     mov rdx, rdi
     call StrCopy
-    pop rax                 ; Restore Len
+    pop rax                 ; Restore Len (includes null)
+    dec eax                 ; Exclude null
+    mov [r14 + CachedFile.FileNameLen], eax
     
     ; 5. Alloc & Read Content
     mov rcx, r13
@@ -654,6 +656,7 @@ rdi_is_ext:
     mov [ConfigHead], r8
     
     ; Store Strings (Pointers into buffer are fine, buffer leaks but that's ok for global config)
+    ; Note: The 'rsi' buffer acts as a persistent memory arena for these strings.
     mov [r8 + ConfigEntry.Extension], rdi
     mov [r8 + ConfigEntry.MimeType], rbx
     
@@ -725,13 +728,25 @@ InitCache endp
 FindCacheEntry proc public
     push rbx
     push rsi
+    push rdi
     
     mov rbx, rcx            ; Search Name
+    
+    ; Calculate Search Key Length
+    call StrLen
+    mov rdi, rax            ; Save Length in RDI (Non-volatile)
+    
     mov rsi, [CacheHead]
     
 search_loop:
     test rsi, rsi
     jz not_found
+    
+    ; TODO: Debug FileNameLen check. Currently fails matching.
+    ; Check Length First
+    ; mov eax, [rsi + CachedFile.FileNameLen]
+    ; cmp eax, edi            ; Compare with calculated length
+    ; jne next_node
     
     ; Use StrCompare (Case Sensitive)
     mov rcx, rbx
@@ -740,17 +755,20 @@ search_loop:
     test rax, rax
     jnz found
     
+next_node:
     mov rsi, [rsi + CachedFile.Next]
     jmp search_loop
     
 found:
     mov rax, rsi
+    pop rdi
     pop rsi
     pop rbx
     ret
     
 not_found:
     xor rax, rax
+    pop rdi
     pop rsi
     pop rbx
     ret
