@@ -15,13 +15,7 @@ extern ExitThread:proc
 extern AllocContext:proc
 extern FreeContext:proc
 
-extern cachedResponse:qword
-extern cachedResponseLen:dword
-extern cachedHeaderLen:dword
-extern cachedPngResponse:qword
-extern cachedPngLen:dword
-extern cachedPngHeaderLen:dword
-extern StrLen:proc
+extern HandleHttpRequest:proc
 
 .data
     msgWorkerStart  db "Worker Thread Started.", 13, 10, 0
@@ -30,121 +24,8 @@ extern StrLen:proc
     msgClientDis    db "Client Disconnected.", 13, 10, 0
     msgAssocErr     db "Assoc Failed.", 13, 10, 0
     msgAllocErr     db "Alloc Failed.", 13, 10, 0
-    response405     db "HTTP/1.1 405 Method Not Allowed", 13, 10, "Connection: close", 13, 10, "Content-Length: 0", 13, 10, 13, 10, 0
-    
+
 .code
-
-; ---------------------------------------------------------
-; CheckPath
-; Purpose:  Checks if request path contains "httpdLite.png" (Case Insensitive)
-; Args:     RCX = Buffer Pointer, RDX = Length
-; Returns:  RAX = 1 if PNG, 0 if not
-; ---------------------------------------------------------
-CheckPath proc private
-    mov r8, rdx         ; limit
-    mov rdx, rcx        ; ptr
-    
-    cmp r8, 64
-    jbe scan_loop
-    mov r8, 64
-
-scan_loop:
-    cmp r8, 0
-    jz not_found
-    
-    ; Check for 'h' or 'H'
-    mov al, [rdx]
-    or al, 20h          ; To Lower
-    cmp al, 'h'
-    jne next_char
-    
-    ; Check "httpdlite.png"
-    ; We can unroll and OR 20h for each char
-    
-    ; +1 't'
-    mov al, [rdx+1]
-    or al, 20h
-    cmp al, 't'
-    jne next_char
-
-    ; +2 't'
-    mov al, [rdx+2]
-    or al, 20h
-    cmp al, 't'
-    jne next_char
-
-    ; +3 'p'
-    mov al, [rdx+3]
-    or al, 20h
-    cmp al, 'p'
-    jne next_char
-
-    ; +4 'd'
-    mov al, [rdx+4]
-    or al, 20h
-    cmp al, 'd'
-    jne next_char
-
-    ; +5 'l' (Lower case L)
-    mov al, [rdx+5]
-    or al, 20h
-    cmp al, 'l'
-    jne next_char
-
-    ; +6 'i'
-    mov al, [rdx+6]
-    or al, 20h
-    cmp al, 'i'
-    jne next_char
-
-    ; +7 't'
-    mov al, [rdx+7]
-    or al, 20h
-    cmp al, 't'
-    jne next_char
-
-    ; +8 'e'
-    mov al, [rdx+8]
-    or al, 20h
-    cmp al, 'e'
-    jne next_char
-
-    ; +9 '.'
-    mov al, [rdx+9]
-    ; No case for dot
-    cmp al, '.'
-    jne next_char
-
-    ; +10 'p'
-    mov al, [rdx+10]
-    or al, 20h
-    cmp al, 'p'
-    jne next_char
-
-    ; +11 'n'
-    mov al, [rdx+11]
-    or al, 20h
-    cmp al, 'n'
-    jne next_char
-
-    ; +12 'g'
-    mov al, [rdx+12]
-    or al, 20h
-    cmp al, 'g'
-    jne next_char
-    
-    mov rax, 1
-    ret
-
-next_char:
-    inc rdx
-    dec r8
-    jmp scan_loop
-
-not_found:
-    xor rax, rax
-    ret
-CheckPath endp
 
 ; ---------------------------------------------------------
 ; WorkerThread
@@ -155,8 +36,6 @@ WorkerThread proc public
     push rbx
     push rsi
     push rdi
-    ; Alignment: Entry ...8 -> Push x3 -> ...0.
-    ; Alloc 112 -> ...0. Correct.
     sub rsp, 112
 
     mov rbx, rcx            ; Save Completion Port Handle
@@ -194,110 +73,21 @@ iocp_loop:
     jmp iocp_loop
 
 handle_recv:
-    ; Data received.
-    lea rdx, [rsi + IO_CONTEXT.buffer]
-
-    ; Check for "GET " (0x20544547)
-    cmp dword ptr [rdx], 20544547h
-    je do_get
-
-    ; Check for "HEAD" (0x44414548)
-    cmp dword ptr [rdx], 44414548h
-    je do_head
+    ; Hand off to HTTP Handler
+    ; RCX = IO_CONTEXT, RDX = BytesTransferred
+    mov rcx, rsi
+    mov edx, [rsp + 56]     ; Load Bytes Transferred
     
-    ; Else 405
-    jmp do_405
-
-do_get:
-    ; Check Path
-    mov rcx, rdx            ; Buffer
-    mov eax, [rsp + 56]     ; Bytes Transferred
-    mov rdx, rax            ; Length
-    call CheckPath
-    test rax, rax
-    jnz serve_png
-
-    ; Default serve index.html
-    mov rax, [cachedResponse]
-    mov [rsi + IO_CONTEXT.wsabuf.buf], rax
-    mov eax, [cachedResponseLen]
-    mov [rsi + IO_CONTEXT.wsabuf.len], eax
-    jmp send_response
-
-serve_png:
-    mov rax, [cachedPngResponse]
-    mov [rsi + IO_CONTEXT.wsabuf.buf], rax
-    mov eax, [cachedPngLen]
-    mov [rsi + IO_CONTEXT.wsabuf.len], eax
-    jmp send_response
-
-do_head:
-    ; Check Path for HEAD too
-    lea rcx, [rsi + IO_CONTEXT.buffer]
-    mov eax, [rsp + 56]
-    mov rdx, rax
-    call CheckPath
-    test rax, rax
-    jnz serve_png_head
-
-    mov rax, [cachedResponse]
-    mov [rsi + IO_CONTEXT.wsabuf.buf], rax
-    mov eax, [cachedHeaderLen]
-    mov [rsi + IO_CONTEXT.wsabuf.len], eax
-    jmp send_response
-
-serve_png_head:
-    mov rax, [cachedPngResponse]
-    mov [rsi + IO_CONTEXT.wsabuf.buf], rax
-    mov eax, [cachedPngHeaderLen]
-    mov [rsi + IO_CONTEXT.wsabuf.len], eax
-    jmp send_response
-
-do_405:
-    lea rax, [response405]
-    mov [rsi + IO_CONTEXT.wsabuf.buf], rax
-    lea rcx, [response405]
-    call StrLen
-    mov [rsi + IO_CONTEXT.wsabuf.len], eax
-    jmp send_response
-
-send_response:
-    ; Prepare for Send
-    mov [rsi + IO_CONTEXT.opType], OP_SEND
+    call HandleHttpRequest
     
-    ; WSASend(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent, dwFlags, lpOverlapped, lpCompletionRoutine)
-    mov rcx, [rsi + IO_CONTEXT.socket]
-    lea rdx, [rsi + IO_CONTEXT.wsabuf]
-    mov r8, 1               ; Buffer Count
-    lea r9, [rsp + 88]      ; lpNumberOfBytesSent (Scratch)
-    mov qword ptr [rsp + 32], 0 ; dwFlags
-    mov qword ptr [rsp + 40], rsi ; lpOverlapped
-    mov qword ptr [rsp + 48], 0 ; lpCompletionRoutine
-    call WSASend
-
-    cmp eax, SOCKET_ERROR
-    je check_pending_send
+    test rax, rax
+    jnz close_connection    ; If 1, Error
+    
+    ; If 0, Success/Pending. Back to loop.
     jmp iocp_loop
 
-check_pending_send:
-    call WSAGetLastError
-    cmp eax, WSA_IO_PENDING
-    je iocp_loop
-    ; Real error
-    jmp close_connection
-
 handle_send:
-    ; Send complete. 
-    ; For this simple HTTP server, we close the connection after the response.
-    ; This ensures clients (like the tests) don't hang waiting for stream end.
-    jmp close_connection
-
-    ; (Old Keep-Alive Logic Removed)
-
-check_pending_recv:
-    call WSAGetLastError
-    cmp eax, WSA_IO_PENDING
-    je iocp_loop
+    ; Send complete. Close connection.
     jmp close_connection
 
 client_disconnect:
@@ -360,13 +150,13 @@ PostAccept proc public
     ; 3. Setup
     mov [rsi + IO_CONTEXT.socket], rbx
     mov [rsi + IO_CONTEXT.opType], OP_RECV
-    mov [rsi + IO_CONTEXT.wsabuf.len], BUFFER_SIZE
+    mov [rsi + IO_CONTEXT.wsaBufs.len], BUFFER_SIZE
     lea rax, [rsi + IO_CONTEXT.buffer]
-    mov [rsi + IO_CONTEXT.wsabuf.buf], rax
+    mov [rsi + IO_CONTEXT.wsaBufs.buf], rax
     
     ; 4. WSARecv
     mov rcx, rbx
-    lea rdx, [rsi + IO_CONTEXT.wsabuf]
+    lea rdx, [rsi + IO_CONTEXT.wsaBufs]
     mov r8, 1               ; Buffer Count
     lea r9, [rsp + 64]      ; BytesRecvd (Local)
     

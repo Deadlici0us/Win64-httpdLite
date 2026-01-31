@@ -69,6 +69,119 @@ done_memcpy:
     ret
 MemCpy endp
 
+; ---------------------------------------------------------
+; StrCompare (Case Insensitive)
+; Args:     RCX = String1, RDX = String2
+; Returns:  RAX = 1 (Match), 0 (No Match)
+; ---------------------------------------------------------
+StrCompareCaseInsensitive proc public
+    push rsi
+    push rdi
+    
+    mov rsi, rcx
+    mov rdi, rdx
+    
+cmp_loop:
+    mov al, [rsi]
+    mov dl, [rdi]
+    
+    ; Check for end of strings
+    test al, al
+    jz check_end
+    test dl, dl
+    jz no_match     ; s1 has chars, s2 ended
+    
+    ; Lowercase conversion for comparison
+    or al, 20h
+    or dl, 20h
+    
+    cmp al, dl
+    jne no_match
+    
+    inc rsi
+    inc rdi
+    jmp cmp_loop
+    
+check_end:
+    test dl, dl
+    jnz no_match    ; s1 ended, s2 has chars
+    
+    mov rax, 1      ; Match
+    pop rdi
+    pop rsi
+    ret
+
+no_match:
+    xor rax, rax
+    pop rdi
+    pop rsi
+    ret
+StrCompareCaseInsensitive endp
+
+; ---------------------------------------------------------
+; StrCompare (Case Sensitive)
+; Args:     RCX = String1, RDX = String2
+; Returns:  RAX = 1 (Match), 0 (No Match)
+; ---------------------------------------------------------
+StrCompare proc public
+    push rsi
+    push rdi
+    
+    mov rsi, rcx
+    mov rdi, rdx
+    
+cmp_loop_cs:
+    mov al, [rsi]
+    mov dl, [rdi]
+    
+    cmp al, dl
+    jne no_match_cs
+    
+    test al, al
+    jz match_cs
+    
+    inc rsi
+    inc rdi
+    jmp cmp_loop_cs
+    
+match_cs:
+    mov rax, 1
+    pop rdi
+    pop rsi
+    ret
+
+no_match_cs:
+    xor rax, rax
+    pop rdi
+    pop rsi
+    ret
+StrCompare endp
+
+; ---------------------------------------------------------
+; StrCopy
+; Purpose:  Copy null-terminated string
+; Args:     RCX = Dest, RDX = Source
+; ---------------------------------------------------------
+StrCopy proc public
+    push rsi
+    push rdi
+    
+    mov rdi, rcx
+    mov rsi, rdx
+    
+copy_loop:
+    mov al, [rsi]
+    mov [rdi], al
+    inc rsi
+    inc rdi
+    test al, al
+    jnz copy_loop
+    
+    pop rdi
+    pop rsi
+    ret
+StrCopy endp
+
 IntToDecString proc public
     ; RCX = Value, RDX = Buffer
     ; Returns: RAX = Length
@@ -83,6 +196,7 @@ IntToDecString proc public
     test rax, rax
     jnz loop_digits
     mov byte ptr [rdi], '0'
+    mov byte ptr [rdi+1], 0 ; Null terminate
     mov rax, 1
     jmp done_itoa
     
@@ -102,6 +216,8 @@ store_digits:
     mov [rdi], dl
     inc rdi
     loop store_digits
+
+    mov byte ptr [rdi], 0 ; Null terminate
     
 done_itoa:
     pop rdi

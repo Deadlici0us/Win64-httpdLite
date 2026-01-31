@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(win64-httpdLite LANGUAGES C ASM_MASM)
 
-add_executable(httpdLite src/main.asm src/utils.asm src/network.asm src/handler.asm src/memory.asm)
+add_executable(httpdLite src/main.asm src/utils.asm src/network.asm src/handler.asm src/http.asm src/memory.asm src/cache.asm)
 
 # Ensure MASM can find our .inc files in the source directory
 target_compile_options(httpdLite PRIVATE /I${CMAKE_CURRENT_SOURCE_DIR}/src/include)
@@ -29,4 +29,7 @@ target_link_libraries(httpdLite PRIVATE Ws2_32)
 add_custom_command(TARGET httpdLite POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/html
-        $<TARGET_FILE_DIR:httpdLite>/html)
+        $<TARGET_FILE_DIR:httpdLite>/html
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/httpd.conf
+        $<TARGET_FILE_DIR:httpdLite>/httpd.conf)

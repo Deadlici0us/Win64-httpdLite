@@ -29,6 +29,10 @@ WSA_IO_PENDING    equ 997
 OP_RECV           equ 0
 OP_SEND           equ 1
 
+; HTTP Constants
+HTTP_METHOD_GET   equ 20544547h ; "GET " (Little Endian)
+HTTP_METHOD_HEAD  equ 44414548h ; "HEAD" (Little Endian)
+
 ; Structures
 sockaddr_in STRUCT
     sin_family WORD ?
@@ -57,8 +61,8 @@ WSAOVERLAPPED ENDS
 IO_CONTEXT STRUCT
     ov          WSAOVERLAPPED <> ; 0
     poolEntry   SLIST_ENTRY <>   ; 32 (Used for Memory Pool)
-    wsabuf      WSABUF <>        ; 40
-    socket      QWORD ?          ; 56
-    opType      DWORD ?          ; 64
-    buffer      BYTE BUFFER_SIZE DUP(?) ; 68...
+    wsaBufs     WSABUF 2 DUP(<>) ; 40 (Array of 2 buffers)
+    socket      QWORD ?          ; 40 + 32 = 72
+    opType      DWORD ?          ; 80
+    buffer      BYTE BUFFER_SIZE DUP(?) ; 84...
 IO_CONTEXT ENDS
